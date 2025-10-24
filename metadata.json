@@ -1,0 +1,5 @@
+{
+  "name": "AutoFlow: GitHub Actions Dashboard",
+  "description": "A robust web platform for student developers to simplify CI/CD. This application focuses on its core, real-world functionality: securely connecting with GitHub, precisely fetching a user's repositories, and accurately triggering pre-configured GitHub Actions workflows.",
+  "requestFramePermissions": []
+}
