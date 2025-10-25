@@ -1,5 +1,5 @@
 
-# AutoFlow: GitHub Actions Dashboard
+# AutoFlow: 
 
 **Simplify your CI/CD pipeline with a developer-friendly dashboard for GitHub Actions.**
 
