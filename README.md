@@ -1,5 +1,4 @@
-
-# AutoFlow: 
+# AutoFlow: GitHub Actions Dashboard
 
 **Simplify your CI/CD pipeline with a developer-friendly dashboard for GitHub Actions.**
 
@@ -14,7 +13,7 @@ AutoFlow provides a robust web interface to connect with your GitHub account, ma
 *   **Dynamic Workflow Management**: Automatically discover all active workflows (`.yml` files) within your selected repository.
 *   **One-Click Workflow Triggering**: Manually run any workflow configured with a `workflow_dispatch` event directly from the UI.
 *   **Live Log Streaming**: Monitor your workflow runs in real-time with a live-updating log viewer that streams output directly from the GitHub API.
-*   **Intelligent Workflow Generation**: Create complete, production-ready CI/CD pipelines for Vercel and Railway with a single click using pre-built templates.
+*   **Intelligent Workflow Generation**: Create CI/CD starter pipelines with a single click using pre-built templates.
 *   **Modern & Responsive UI**: Enjoy a clean, GitHub-inspired interface with a collapsible sidebar, light/dark modes, and a focus on usability.
 *   **Detailed Run Views**: Get comprehensive details for each workflow run, including status, conclusion, trigger information, and links to GitHub.
 
@@ -73,6 +72,22 @@ npm run start # Assumes a start script is defined in package.json
 ```
 
 Open your browser to `http://localhost:3000`. Paste your GitHub PAT into the login field to begin using AutoFlow.
+
+## 🚀 Deployment
+
+### Deploying to Vercel
+
+Deploying AutoFlow is straightforward with Vercel's zero-configuration platform.
+
+1.  **Fork the Repository**: Start by forking this repository to your own GitHub account.
+2.  **Create a Vercel Project**:
+    *   Go to your [Vercel Dashboard](https://vercel.com/dashboard) and click **"Add New... > Project"**.
+    *   Select **"Continue with GitHub"** and import the repository you just forked.
+3.  **Configure the Project**:
+    *   Vercel will automatically detect that this is a React application and configure the build settings correctly.
+    *   The `vercel.json` file included in this repository ensures that all routes are correctly handled by the single-page application.
+    *   There is no need to configure any environment variables. The application is entirely client-side.
+4.  **Deploy**: Click the **"Deploy"** button. Vercel will build and deploy your application. Once complete, you'll be given a URL to your live AutoFlow instance.
 
 ## 🛠️ How It Works
 

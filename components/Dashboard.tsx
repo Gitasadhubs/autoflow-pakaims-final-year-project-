@@ -8,7 +8,7 @@ import WorkflowGenerator from './WorkflowGenerator';
 import Settings from './Settings';
 import Documentation from './Documentation';
 import WorkflowPreview from './WorkflowPreview';
-import { JetIcon, LogoutIcon, PlusIcon, RepoIcon, BookOpenIcon, CogIcon, ClockIcon, ChevronDoubleLeftIcon, ChevronDoubleRightIcon, ExternalLinkIcon } from './icons';
+import { JetIcon, LogoutIcon, PlusIcon, RepoIcon, BookOpenIcon, CogIcon, ClockIcon, ChevronDoubleLeftIcon, ChevronDoubleRightIcon, ExternalLinkIcon, RefreshIcon } from './icons';
 import LoadingScreen from './LoadingScreen';
 
 interface DashboardProps {
@@ -33,33 +33,39 @@ const Dashboard: React.FC<DashboardProps> = ({ token, onLogout, theme, toggleThe
   const [currentPage, setCurrentPage] = useState<Page>('workflows');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const [userData, repoData] = await Promise.all([
-          githubService.getAuthenticatedUser(token),
-          githubService.getUserRepos(token)
-        ]);
-        setUser(userData);
-        setRepos(repoData);
-      } catch (err) {
-        if (err instanceof Error) {
-            setError(err.message);
-            if(err.message.includes("Bad credentials")) {
-                onLogout();
-            }
-        } else {
-            setError("An unknown error occurred.");
-        }
-      } finally {
-        setLoading(false);
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      // Reset state to ensure a clean refresh
+      setSelectedRepo(null);
+      setWorkflows([]);
+      setActiveRun(null);
+      setWorkflowPreview(null);
+      
+      const [userData, repoData] = await Promise.all([
+        githubService.getAuthenticatedUser(token),
+        githubService.getUserRepos(token)
+      ]);
+      setUser(userData);
+      setRepos(repoData);
+    } catch (err) {
+      if (err instanceof Error) {
+          setError(err.message);
+          if(err.message.includes("Bad credentials")) {
+              onLogout();
+          }
+      } else {
+          setError("An unknown error occurred.");
       }
-    };
+    } finally {
+      setLoading(false);
+    }
+  }, [token, onLogout]);
+
+  useEffect(() => {
     fetchData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
+  }, [fetchData]);
 
   const handleRepoSelect = useCallback(async (repo: Repository) => {
     setSelectedRepo(repo);
@@ -279,12 +285,22 @@ const Dashboard: React.FC<DashboardProps> = ({ token, onLogout, theme, toggleThe
       
       <main className="flex-1 flex flex-col overflow-hidden">
         <header className="h-16 flex items-center justify-end px-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-            {user && (
-                <div className="flex items-center space-x-3">
-                    <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{user.login}</span>
-                    <img src={user.avatar_url} alt={user.login} className="h-8 w-8 rounded-full" />
-                </div>
-            )}
+            <div className="flex items-center space-x-4">
+                 <button
+                    onClick={fetchData}
+                    disabled={loading}
+                    title="Refresh application data"
+                    className="p-2 rounded-full text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                    <RefreshIcon className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
+                </button>
+                {user && (
+                    <div className="flex items-center space-x-3">
+                        <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{user.login}</span>
+                        <img src={user.avatar_url} alt={user.login} className="h-8 w-8 rounded-full" />
+                    </div>
+                )}
+            </div>
         </header>
 
        {renderPage()}

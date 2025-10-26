@@ -9,104 +9,62 @@ interface WorkflowGeneratorProps {
     repo: Repository;
 }
 
+const newWorkflowContent = `name: CI/CD  Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Build Project
+        run: |
+          echo "Building project..."
+          sleep 5
+          echo "Build complete."
+
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Run Tests
+        run: |
+          echo "Running tests..."
+          sleep 10
+          echo "Tests passed."
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Deploy to Production
+        run: |
+          echo "Deploying to production..."
+          sleep 5
+          echo "Deployment successful!."`;
+
+
 const templates = {
   'vercel-deploy': {
     name: 'Deploy to Vercel',
     filename: 'deploy-vercel.yml',
-    content: `name: CI/CD Pipeline
-
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-  workflow_dispatch:
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Build Project
-        run: |
-          echo "Building project..."
-          sleep 5
-          echo "Build complete."
-
-  test:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Run Tests
-        run: |
-          echo "Running tests..."
-          sleep 10
-          echo "Tests passed."
-  
-  deploy:
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Deploy to Production
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: \${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: \${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: \${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod'`
+    content: newWorkflowContent
   },
   'railway-deploy': {
     name: 'Deploy to Railway',
     filename: 'deploy-railway.yml',
-    content: `name: CI/CD Pipeline
-
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-  workflow_dispatch:
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Build Project
-        run: |
-          echo "Building project..."
-          sleep 5
-          echo "Build complete."
-
-  test:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Run Tests
-        run: |
-          echo "Running tests..."
-          sleep 10
-          echo "Tests passed."
-  
-  deploy:
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Deploy to Production
-        uses: railwayapp/cli-action@v1.1.2
-        with:
-          railway_token: \${{ secrets.RAILWAY_TOKEN }}
-          railway_project_id: \${{ secrets.RAILWAY_PROJECT_ID }}`
+    content: newWorkflowContent
   }
 };
 
