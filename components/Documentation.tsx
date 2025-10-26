@@ -63,52 +63,23 @@ const Documentation: React.FC = () => {
                 <section>
                     <h2 id="workflow-templates">Workflow Templates</h2>
                     <p>
-                        AutoFlow provides production-ready CI/CD templates to help you deploy your projects to popular hosting platforms like Vercel and Railway. These workflows are designed to work with minimal setup.
+                        AutoFlow provides starter CI/CD templates to help you get started with automating your projects. You can generate a workflow file that establishes a typical build, test, and deploy process.
                     </p>
                     <p>
-                        Before using a template, you must link your local project to the respective service using their CLI and add an authentication token to your GitHub repository secrets. The instructions are included as comments at the top of each generated workflow file.
+                        The provided template is a starting point. You will need to customize the jobs with the specific commands and secrets required by your project and hosting provider (like Vercel, Railway, Firebase, etc.).
                     </p>
-                    
-                    <h3 id="vercel-deploy">Deploy to Vercel</h3>
+                    <h3 id="generic-pipeline">Generic CI/CD Pipeline</h3>
                     <p>
-                        This template uses the official Vercel CLI to build and deploy your project.
+                        The templates generate a foundational pipeline that establishes a standard CI/CD process. It includes three sequential jobs:
                     </p>
-                    <h4>Setup Steps:</h4>
-                    <ol>
-                        <li><strong>Install the Vercel CLI:</strong> If you don't have it, run <code>npm install -g vercel</code> in your terminal.</li>
-                        <li><strong>Link Your Project:</strong> In your local project directory, run <code>vercel link</code>. Follow the prompts to connect it to a new or existing Vercel project. This will create a <code>.vercel</code> directory in your project.</li>
-                        <li><strong>Commit the <code>.vercel</code> directory:</strong> Add and commit the generated <code>.vercel</code> directory to your git repository. This allows the GitHub Action to know which project to deploy to.</li>
-                        <li>
-                            <strong>Add GitHub Secret:</strong>
-                            <ul>
-                                <li>Go to your repository's <strong>Settings &gt; Secrets and variables &gt; Actions</strong>.</li>
-                                <li>Click <strong>New repository secret</strong>.</li>
-                                <li>Name the secret <code>VERCEL_TOKEN</code>.</li>
-                                <li>For the value, paste a Vercel Access Token. You can generate one from your <a href="https://vercel.com/account/tokens" target="_blank" rel="noopener noreferrer">Vercel Account Settings</a>.</li>
-                            </ul>
-                        </li>
-                    </ol>
-                    <p>Once set up, this workflow will automatically deploy your project to Vercel on every push to the <code>main</code> branch.</p>
-
-                    <h3 id="railway-deploy">Deploy to Railway</h3>
+                    <ul>
+                        <li><strong>Build:</strong> Contains initial steps for checking out code and building the project.</li>
+                        <li><strong>Test:</strong> Runs after a successful build, providing a stage for your testing commands.</li>
+                        <li><strong>Deploy:</strong> Executes after tests pass, outlining the steps for a production deployment.</li>
+                    </ul>
                     <p>
-                        This template uses the official Railway CLI Action to deploy your project.
+                        Each job includes placeholder commands (e.g., <code>echo "Building project..."</code>) that you will replace with your project's specific scripts for building, testing, and deploying.
                     </p>
-                    <h4>Setup Steps:</h4>
-                    <ol>
-                        <li><strong>Install the Railway CLI:</strong> If you don't have it, run <code>npm install -g @railway/cli</code>.</li>
-                        <li><strong>Link Your Project:</strong> In your local project directory, run <code>railway link</code> and select the Railway project and service you want to deploy to.</li>
-                        <li>
-                            <strong>Add GitHub Secret:</strong>
-                            <ul>
-                                <li>Go to your repository's <strong>Settings &gt; Secrets and variables &gt; Actions</strong>.</li>
-                                <li>Click <strong>New repository secret</strong>.</li>
-                                <li>Name the secret <code>RAILWAY_TOKEN</code>.</li>
-                                <li>For the value, paste a Railway Project Token. You can generate one from your <a href="https://railway.app/account/tokens" target="_blank" rel="noopener noreferrer">Railway Account Settings</a>.</li>
-                            </ul>
-                        </li>
-                    </ol>
-                    <p>This workflow will automatically deploy your project to Railway on every push to the <code>main</code> branch.</p>
                 </section>
             </div>
         </div>

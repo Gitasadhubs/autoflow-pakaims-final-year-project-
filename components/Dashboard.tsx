@@ -8,7 +8,7 @@ import WorkflowGenerator from './WorkflowGenerator';
 import Settings from './Settings';
 import Documentation from './Documentation';
 import WorkflowPreview from './WorkflowPreview';
-import { JetIcon, LogoutIcon, PlusIcon, RepoIcon, BookOpenIcon, CogIcon, ClockIcon, ChevronDoubleLeftIcon, ChevronDoubleRightIcon, ExternalLinkIcon, RefreshIcon } from './icons';
+import { JetIcon, LogoutIcon, PlusIcon, RepoIcon, BookOpenIcon, CogIcon, ClockIcon, ChevronDoubleLeftIcon, ChevronDoubleRightIcon, InfinityIcon } from './icons';
 import LoadingScreen from './LoadingScreen';
 
 interface DashboardProps {
@@ -292,7 +292,7 @@ const Dashboard: React.FC<DashboardProps> = ({ token, onLogout, theme, toggleThe
                     title="Refresh application data"
                     className="p-2 rounded-full text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                    <RefreshIcon className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
+                    <InfinityIcon className="h-5 w-5" />
                 </button>
                 {user && (
                     <div className="flex items-center space-x-3">

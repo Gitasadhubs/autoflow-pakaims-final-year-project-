@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { Repository, WorkflowRun, Job, Workflow } from '../types';
 import * as githubService from '../services/githubService';
-import { Spinner, StatusIcon, EyeIcon, InformationCircleIcon, RefreshIcon } from './icons';
+import { Spinner, StatusIcon, EyeIcon, InformationCircleIcon, InfinityIcon } from './icons';
 import WorkflowPreviewModal from './WorkflowPreviewModal';
 
 interface WorkflowRunViewProps {
@@ -171,7 +171,7 @@ const WorkflowRunView: React.FC<WorkflowRunViewProps> = ({ token, repo, runId })
                     className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     title="Refresh pipeline status"
                 >
-                    <RefreshIcon className={`h-5 w-5 text-gray-600 dark:text-gray-400 ${runLoading ? 'animate-spin' : ''}`} />
+                    <InfinityIcon className={`h-5 w-5 text-gray-600 dark:text-gray-400 ${runLoading ? 'animate-spin' : ''}`} />
                 </button>
             </div>
 

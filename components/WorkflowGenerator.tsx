@@ -9,7 +9,7 @@ interface WorkflowGeneratorProps {
     repo: Repository;
 }
 
-const newWorkflowContent = `name: CI/CD  Pipeline
+const cicdWorkflowContent = `name: CI/CD  Pipeline
 
 on:
   push:
@@ -59,12 +59,12 @@ const templates = {
   'vercel-deploy': {
     name: 'Deploy to Vercel',
     filename: 'deploy-vercel.yml',
-    content: newWorkflowContent
+    content: cicdWorkflowContent
   },
   'railway-deploy': {
     name: 'Deploy to Railway',
     filename: 'deploy-railway.yml',
-    content: newWorkflowContent
+    content: cicdWorkflowContent
   }
 };
 
@@ -79,15 +79,19 @@ const WorkflowGenerator: React.FC<WorkflowGeneratorProps> = ({ isOpen, onClose, 
 
     useEffect(() => {
         if (isOpen) {
-            setSelectedTemplate(Object.keys(templates)[0]);
-            setFilename(activeTemplate.filename);
+            const firstTemplateKey = Object.keys(templates)[0];
+            const firstTemplate = templates[firstTemplateKey as keyof typeof templates];
+            setSelectedTemplate(firstTemplateKey);
+            setFilename(firstTemplate.filename);
             setError(null);
             setIsLoading(false);
         }
-    }, [isOpen, activeTemplate]);
+    }, [isOpen]);
     
     useEffect(() => {
-        setFilename(activeTemplate.filename);
+        if (activeTemplate) {
+            setFilename(activeTemplate.filename);
+        }
     }, [activeTemplate]);
 
     const handleSubmit = async (e: React.FormEvent) => {
