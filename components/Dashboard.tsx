@@ -8,7 +8,9 @@ import WorkflowGenerator from './WorkflowGenerator';
 import Settings from './Settings';
 import Documentation from './Documentation';
 import WorkflowPreview from './WorkflowPreview';
-import { JetIcon, LogoutIcon, PlusIcon, RepoIcon, BookOpenIcon, CogIcon, ClockIcon, ChevronDoubleLeftIcon, ChevronDoubleRightIcon, InfinityIcon } from './icons';
+import Sponsor from './Sponsor';
+import RepoSelection from './RepoSelection';
+import { JetIcon, LogoutIcon, PlusIcon, RepoIcon, BookOpenIcon, CogIcon, ClockIcon, ChevronDoubleLeftIcon, ChevronDoubleRightIcon, InfinityIcon, HeartIcon, ChevronLeftIcon } from './icons';
 import LoadingScreen from './LoadingScreen';
 
 interface DashboardProps {
@@ -18,7 +20,7 @@ interface DashboardProps {
   toggleTheme: () => void;
 }
 
-type Page = 'workflows' | 'documentation' | 'settings';
+type Page = 'workflows' | 'documentation' | 'settings' | 'sponsor';
 
 const Dashboard: React.FC<DashboardProps> = ({ token, onLogout, theme, toggleTheme }) => {
   const [user, setUser] = useState<GitHubUser | null>(null);
@@ -98,6 +100,14 @@ const Dashboard: React.FC<DashboardProps> = ({ token, onLogout, theme, toggleThe
       }
     }
   }, [token]);
+  
+  const handleBackToRepos = () => {
+    setSelectedRepo(null);
+    setWorkflows([]);
+    setActiveRun(null);
+    setWorkflowPreview(null);
+    setError(null);
+  };
 
   const handleWorkflowRun = useCallback(async (workflow: Workflow) => {
       if (!selectedRepo) return;
@@ -159,32 +169,40 @@ const Dashboard: React.FC<DashboardProps> = ({ token, onLogout, theme, toggleThe
             return <Documentation />;
         case 'settings':
             return <Settings theme={theme} toggleTheme={toggleTheme} onLogout={onLogout} />;
+        case 'sponsor':
+            return <Sponsor />;
         case 'workflows':
         default:
+            if (!selectedRepo) {
+                return <RepoSelection repos={repos} onRepoSelect={handleRepoSelect} />;
+            }
             return (
                  <div className="flex-1 flex overflow-hidden">
                     <div className="w-1/3 border-r border-gray-200 dark:border-gray-700 overflow-y-auto p-6 flex flex-col">
                         <div className="flex justify-between items-center mb-4 flex-shrink-0">
-                            <h2 className="text-2xl font-bold truncate pr-4 text-gray-800 dark:text-white">{selectedRepo ? `Workflows for ${selectedRepo.name}` : 'Select a Repository'}</h2>
-                            {selectedRepo && (
+                             <div className="flex items-center space-x-2 min-w-0">
                                 <button
-                                    onClick={() => setGeneratorOpen(true)}
-                                    className="flex items-center space-x-2 px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 focus:ring-blue-500"
+                                    onClick={handleBackToRepos}
+                                    title="Back to repositories"
+                                    className="p-1.5 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex-shrink-0"
                                 >
-                                    <PlusIcon className="h-5 w-5" />
-                                    <span>Generate</span>
+                                    <ChevronLeftIcon className="h-5 w-5 text-gray-600 dark:text-gray-400"/>
                                 </button>
-                            )}
+                                <h2 className="text-2xl font-bold truncate pr-2 text-gray-800 dark:text-white" title={selectedRepo.name}>
+                                    {selectedRepo.name}
+                                </h2>
+                            </div>
+                            <button
+                                onClick={() => setGeneratorOpen(true)}
+                                className="flex items-center space-x-2 px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 focus:ring-blue-500 flex-shrink-0"
+                            >
+                                <PlusIcon className="h-5 w-5" />
+                                <span>Generate</span>
+                            </button>
                         </div>
 
                         <div className="flex-1 overflow-y-auto">
-                            {selectedRepo ? (
-                                <WorkflowList workflows={workflows} onWorkflowRun={handleWorkflowRun} />
-                            ) : (
-                                <div className="text-gray-500 dark:text-gray-500 text-center mt-10">
-                                    <p>Select a repository from the list on the left to see its available GitHub Actions workflows.</p>
-                                </div>
-                            )}
+                           <WorkflowList workflows={workflows} onWorkflowRun={handleWorkflowRun} />
                         </div>
                     </div>
                     <div className="flex-1 overflow-y-auto p-6">
@@ -202,6 +220,7 @@ const Dashboard: React.FC<DashboardProps> = ({ token, onLogout, theme, toggleThe
                                     <div className="text-gray-500 dark:text-gray-500 text-center mt-10">
                                          <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-white">Workflow Run Details</h2>
                                         <p>Trigger a workflow to see its status and logs here.</p>
+                                        <p className="text-sm mt-2">Or, select another workflow from the list on the left.</p>
                                     </div>
                                 )}
                             </>
@@ -242,6 +261,10 @@ const Dashboard: React.FC<DashboardProps> = ({ token, onLogout, theme, toggleThe
                     <button onClick={() => setCurrentPage('documentation')} title="Documentation" className={`w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium rounded-md ${!isSidebarOpen && 'justify-center'} ${currentPage === 'documentation' ? 'bg-blue-600 text-white' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>
                         <BookOpenIcon className="h-5 w-5 flex-shrink-0" />
                         {isSidebarOpen && <span className="truncate">Documentation</span>}
+                    </button>
+                    <button onClick={() => setCurrentPage('sponsor')} title="Sponsor" className={`w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium rounded-md ${!isSidebarOpen && 'justify-center'} ${currentPage === 'sponsor' ? 'bg-blue-600 text-white' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>
+                        <HeartIcon className="h-5 w-5 flex-shrink-0" />
+                        {isSidebarOpen && <span className="truncate">Sponsor Us</span>}
                     </button>
                     <button onClick={() => setCurrentPage('settings')} title="Settings" className={`w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium rounded-md ${!isSidebarOpen && 'justify-center'} ${currentPage === 'settings' ? 'bg-blue-600 text-white' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>
                         <CogIcon className="h-5 w-5 flex-shrink-0" />

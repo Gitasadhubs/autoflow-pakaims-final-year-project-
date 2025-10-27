@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { Repository, WorkflowRun, Job, Workflow } from '../types';
 import * as githubService from '../services/githubService';
-import { Spinner, StatusIcon, EyeIcon, InformationCircleIcon, InfinityIcon } from './icons';
+import { Spinner, StatusIcon, EyeIcon, InformationCircleIcon, InfinityIcon, ClockIcon } from './icons';
 import WorkflowPreviewModal from './WorkflowPreviewModal';
 
 interface WorkflowRunViewProps {
@@ -70,6 +70,16 @@ const usePolling = <T,>(
     }, [fetcher, interval, stopCondition, refetchCount]); // data is intentionally omitted to prevent inefficient re-polling
 
     return { data, error, loading, refetch };
+};
+
+const getDuration = (start: string, end: string | null): string => {
+    if (!start || !end) return '';
+    const seconds = Math.floor((new Date(end).getTime() - new Date(start).getTime()) / 1000);
+    if (seconds < 0) return '';
+    if (seconds < 60) return `${seconds}s`;
+    const minutes = Math.floor(seconds / 60);
+    const remSeconds = seconds % 60;
+    return `${minutes}m ${remSeconds}s`;
 };
 
 
@@ -250,6 +260,33 @@ const WorkflowRunView: React.FC<WorkflowRunViewProps> = ({ token, repo, runId })
                                     <li>Ensure the workflow has the necessary permissions to access resources.</li>
                                 </ul>
                             </div>
+                        </div>
+                    )}
+
+                    {jobs.length > 0 && (
+                        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+                            <h4 className="p-4 text-md font-semibold border-b border-gray-200 dark:border-gray-700 text-gray-800 dark:text-white">Jobs</h4>
+                            <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+                                {jobs.map(job => (
+                                    <li key={job.id} className="p-4 flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                                        <div className="flex items-center space-x-3">
+                                            <StatusIcon status={job.status} conclusion={job.conclusion} />
+                                            <span className="font-medium text-gray-800 dark:text-gray-200">{job.name}</span>
+                                        </div>
+                                        <div className="flex items-center space-x-4 text-sm">
+                                            {job.status === 'completed' && job.completed_at && (
+                                                <div className="flex items-center text-gray-500 dark:text-gray-400" title={`Started: ${new Date(job.started_at).toLocaleString()}\nCompleted: ${new Date(job.completed_at).toLocaleString()}`}>
+                                                    <ClockIcon className="h-4 w-4 mr-1.5" />
+                                                    <span>{getDuration(job.started_at, job.completed_at)}</span>
+                                                </div>
+                                            )}
+                                            <a href={job.html_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-500 hover:underline">
+                                                Details
+                                            </a>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
                         </div>
                     )}
 
