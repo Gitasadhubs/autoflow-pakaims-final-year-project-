@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import type { GitHubUser, Repository, Workflow } from '../types';
+import type { GitHubUser, Repository, Workflow, RateLimit } from '../types';
 import * as githubService from '../services/githubService';
 import RepoList from './RepoList';
 import WorkflowList from './WorkflowList';
@@ -10,8 +10,10 @@ import Documentation from './Documentation';
 import WorkflowPreview from './WorkflowPreview';
 import Sponsor from './Sponsor';
 import RepoSelection from './RepoSelection';
-import { JetIcon, LogoutIcon, PlusIcon, RepoIcon, BookOpenIcon, CogIcon, ClockIcon, ChevronDoubleLeftIcon, ChevronDoubleRightIcon, InfinityIcon, HeartIcon, ChevronLeftIcon } from './icons';
+import Support from './Support';
+import { JetIcon, LogoutIcon, PlusIcon, RepoIcon, BookOpenIcon, CogIcon, ClockIcon, ChevronDoubleLeftIcon, ChevronDoubleRightIcon, InfinityIcon, HeartIcon, ChevronLeftIcon, QuestionMarkCircleIcon, CircleStackIcon } from './icons';
 import LoadingScreen from './LoadingScreen';
+import { useToasts } from '../hooks/useToasts';
 
 interface DashboardProps {
   token: string;
@@ -20,7 +22,7 @@ interface DashboardProps {
   toggleTheme: () => void;
 }
 
-type Page = 'workflows' | 'documentation' | 'settings' | 'sponsor';
+type Page = 'workflows' | 'documentation' | 'settings' | 'sponsor' | 'support';
 
 const Dashboard: React.FC<DashboardProps> = ({ token, onLogout, theme, toggleTheme }) => {
   const [user, setUser] = useState<GitHubUser | null>(null);
@@ -34,6 +36,10 @@ const Dashboard: React.FC<DashboardProps> = ({ token, onLogout, theme, toggleThe
   const [isGeneratorOpen, setGeneratorOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState<Page>('workflows');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const { addToast } = useToasts();
+  const [pendingRuns, setPendingRuns] = useState<Map<number, { repo: Repository; workflowName: string }>>(new Map());
+  const [rateLimit, setRateLimit] = useState<RateLimit | null>(null);
+  const [rateLimitError, setRateLimitError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -44,13 +50,18 @@ const Dashboard: React.FC<DashboardProps> = ({ token, onLogout, theme, toggleThe
       setWorkflows([]);
       setActiveRun(null);
       setWorkflowPreview(null);
+      setRateLimit(null);
+      setRateLimitError(null);
       
-      const [userData, repoData] = await Promise.all([
+      const [userData, repoData, rateLimitData] = await Promise.all([
         githubService.getAuthenticatedUser(token),
-        githubService.getUserRepos(token)
+        githubService.getUserRepos(token),
+        githubService.getRateLimit(token),
       ]);
       setUser(userData);
       setRepos(repoData);
+      setRateLimit(rateLimitData.resources.core);
+
     } catch (err) {
       if (err instanceof Error) {
           setError(err.message);
@@ -68,6 +79,48 @@ const Dashboard: React.FC<DashboardProps> = ({ token, onLogout, theme, toggleThe
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Background polling for notifications
+  useEffect(() => {
+    if (pendingRuns.size === 0) {
+        return;
+    }
+
+    const intervalId = setInterval(async () => {
+        const completedRunIds: number[] = [];
+
+        for (const [runId, { repo, workflowName }] of pendingRuns.entries()) {
+            try {
+                const run = await githubService.getWorkflowRun(token, repo.owner.login, repo.name, runId);
+
+                if (run.status === 'completed') {
+                    addToast({
+                        type: run.conclusion === 'success' ? 'success' : 'error',
+                        message: `Workflow "${workflowName}" in ${repo.name} finished with status: ${run.conclusion}.`,
+                    });
+                    completedRunIds.push(runId);
+                }
+            } catch (error) {
+                console.error(`Error polling for run ${runId}:`, error);
+                // If a run can't be found (e.g., deleted), stop polling for it.
+                if (error instanceof Error && error.message.includes('Not Found')) {
+                    completedRunIds.push(runId);
+                }
+            }
+        }
+
+        if (completedRunIds.length > 0) {
+            setPendingRuns(prev => {
+                const newMap = new Map(prev);
+                completedRunIds.forEach(id => newMap.delete(id));
+                return newMap;
+            });
+        }
+    }, 10000); // Poll every 10 seconds
+
+    return () => clearInterval(intervalId);
+  }, [pendingRuns, token, addToast]);
+
 
   const handleRepoSelect = useCallback(async (repo: Repository) => {
     setSelectedRepo(repo);
@@ -113,26 +166,39 @@ const Dashboard: React.FC<DashboardProps> = ({ token, onLogout, theme, toggleThe
       if (!selectedRepo) return;
       setError(null);
       setWorkflowPreview(null);
+      
+      addToast({
+          type: 'info',
+          message: `Triggering workflow: "${workflow.name}"...`
+      });
+
       try {
           await githubService.triggerWorkflowDispatch(token, selectedRepo.owner.login, selectedRepo.name, workflow.id, 'main');
           
-          setTimeout(async () => {
-              try {
-                  const { workflow_runs } = await githubService.getWorkflowRuns(token, selectedRepo.owner.login, selectedRepo.name, workflow.id);
-                  if (workflow_runs.length > 0) {
-                      setActiveRun({ repo: selectedRepo, runId: workflow_runs[0].id });
-                  }
-              } catch (err) {
-                  console.error("Error fetching workflow runs:", err);
-              }
-          }, 2000);
+          // Wait a bit for the run to be created on GitHub's side
+          await new Promise(resolve => setTimeout(resolve, 3000));
 
+          const { workflow_runs } = await githubService.getWorkflowRuns(token, selectedRepo.owner.login, selectedRepo.name, workflow.id, 1);
+          if (workflow_runs.length > 0) {
+              const newRun = workflow_runs[0];
+              setActiveRun({ repo: selectedRepo, runId: newRun.id });
+
+              // Add to pending runs for background polling
+              setPendingRuns(prev => {
+                  const newMap = new Map(prev);
+                  newMap.set(newRun.id, { repo: selectedRepo, workflowName: workflow.name });
+                  return newMap;
+              });
+          } else {
+               throw new Error("Could not find the newly triggered workflow run.");
+          }
       } catch (err) {
            if (err instanceof Error) {
-              setError(`Failed to trigger workflow: ${err.message}`);
+              setError(`Workflow action failed: ${err.message}`);
+              addToast({ type: 'error', message: `Workflow action failed: ${err.message}` });
            }
       }
-  }, [selectedRepo, token]);
+  }, [selectedRepo, token, addToast]);
 
   const handleCreateWorkflow = async (filename: string, content: string) => {
     if (!selectedRepo) return;
@@ -168,9 +234,11 @@ const Dashboard: React.FC<DashboardProps> = ({ token, onLogout, theme, toggleThe
         case 'documentation':
             return <Documentation />;
         case 'settings':
-            return <Settings theme={theme} toggleTheme={toggleTheme} onLogout={onLogout} />;
+            return <Settings token={token} theme={theme} toggleTheme={toggleTheme} onLogout={onLogout} onRefreshData={fetchData} rateLimit={rateLimit} rateLimitError={rateLimitError} />;
         case 'sponsor':
             return <Sponsor />;
+        case 'support':
+            return <Support />;
         case 'workflows':
         default:
             if (!selectedRepo) {
@@ -262,6 +330,10 @@ const Dashboard: React.FC<DashboardProps> = ({ token, onLogout, theme, toggleThe
                         <BookOpenIcon className="h-5 w-5 flex-shrink-0" />
                         {isSidebarOpen && <span className="truncate">Documentation</span>}
                     </button>
+                    <button onClick={() => setCurrentPage('support')} title="Support" className={`w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium rounded-md ${!isSidebarOpen && 'justify-center'} ${currentPage === 'support' ? 'bg-blue-600 text-white' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>
+                        <QuestionMarkCircleIcon className="h-5 w-5 flex-shrink-0" />
+                        {isSidebarOpen && <span className="truncate">Support</span>}
+                    </button>
                     <button onClick={() => setCurrentPage('sponsor')} title="Sponsor" className={`w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium rounded-md ${!isSidebarOpen && 'justify-center'} ${currentPage === 'sponsor' ? 'bg-blue-600 text-white' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>
                         <HeartIcon className="h-5 w-5 flex-shrink-0" />
                         {isSidebarOpen && <span className="truncate">Sponsor Us</span>}
@@ -309,6 +381,15 @@ const Dashboard: React.FC<DashboardProps> = ({ token, onLogout, theme, toggleThe
       <main className="flex-1 flex flex-col overflow-hidden">
         <header className="h-16 flex items-center justify-end px-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
             <div className="flex items-center space-x-4">
+                 {rateLimit && (
+                    <div
+                        className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400"
+                        title={`API requests remaining. Resets at ${new Date(rateLimit.reset * 1000).toLocaleTimeString()}`}
+                    >
+                        <CircleStackIcon className="h-5 w-5" />
+                        <span className="font-mono">{rateLimit.remaining} / {rateLimit.limit}</span>
+                    </div>
+                )}
                  <button
                     onClick={fetchData}
                     disabled={loading}

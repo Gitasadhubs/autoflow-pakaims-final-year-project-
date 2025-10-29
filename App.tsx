@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
+import { ToastProvider } from './hooks/useToasts';
 
 const App: React.FC = () => {
   const [token, setToken] = useState<string | null>(localStorage.getItem('github-pat'));
@@ -31,13 +32,15 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-200">
-      {token ? (
-        <Dashboard token={token} onLogout={handleLogout} theme={theme} toggleTheme={toggleTheme} />
-      ) : (
-        <Login onLogin={handleLogin} theme={theme} />
-      )}
-    </div>
+    <ToastProvider>
+      <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-200">
+        {token ? (
+          <Dashboard token={token} onLogout={handleLogout} theme={theme} toggleTheme={toggleTheme} />
+        ) : (
+          <Login onLogin={handleLogin} theme={theme} />
+        )}
+      </div>
+    </ToastProvider>
   );
 };
 

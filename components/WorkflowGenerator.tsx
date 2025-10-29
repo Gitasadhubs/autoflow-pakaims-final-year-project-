@@ -9,62 +9,93 @@ interface WorkflowGeneratorProps {
     repo: Repository;
 }
 
-const cicdWorkflowContent = `name: CI/CD  Pipeline
+const vercelWorkflowContent = `name: Deploy to Vercel
 
 on:
   push:
     branches: [ "main" ]
-  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+      - name: Install Dependencies
+        run: npm ci
+      - name: Build
+        run: npm run build --if-present
+      - name: Test
+        run: npm test
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Deploy to Vercel
+        # See documentation for required secrets: https://github.com/amondnet/vercel-action
+        uses: amondnet/vercel-action@v20
+        with:
+          vercel-token: \${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: \${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: \${{ secrets.VERCEL_PROJECT_ID }}`;
+
+const railwayWorkflowContent = `name: Deploy to Railway
+
+on:
+  push:
     branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Build Project
-        run: |
-          echo "Building project..."
-          sleep 5
-          echo "Build complete."
-
-  test:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Run Tests
-        run: |
-          echo "Running tests..."
-          sleep 10
-          echo "Tests passed."
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+      - name: Install Dependencies
+        run: npm ci
+      - name: Build
+        run: npm run build --if-present
+      - name: Test
+        run: npm test
 
   deploy:
     runs-on: ubuntu-latest
-    needs: test
+    needs: build-and-test
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Deploy to Production
-        run: |
-          echo "Deploying to production..."
-          sleep 5
-          echo "Deployment successful!."`;
+      - name: Deploy to Railway
+        # See documentation for required secrets: https://github.com/railwayapp/cli-action
+        uses: railwayapp/cli-action@v1
+        with:
+          railway_token: \${{ secrets.RAILWAY_TOKEN }}`;
 
 
 const templates = {
   'vercel-deploy': {
     name: 'Deploy to Vercel',
     filename: 'deploy-vercel.yml',
-    content: cicdWorkflowContent
+    content: vercelWorkflowContent
   },
   'railway-deploy': {
     name: 'Deploy to Railway',
     filename: 'deploy-railway.yml',
-    content: cicdWorkflowContent
+    content: railwayWorkflowContent
   }
 };
 

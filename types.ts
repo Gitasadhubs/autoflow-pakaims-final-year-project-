@@ -54,3 +54,25 @@ export interface Job {
   started_at: string;
   completed_at: string | null;
 }
+
+export interface Toast {
+  id: number;
+  message: string;
+  type: 'success' | 'error' | 'info';
+}
+
+export interface RateLimit {
+  limit: number;
+  remaining: number;
+  used: number;
+  reset: number; // UNIX epoch seconds
+}
+
+export interface RateLimitResponse {
+    resources: {
+        core: RateLimit;
+        search: RateLimit;
+        graphql: RateLimit;
+    };
+    rate: RateLimit;
+}

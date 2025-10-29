@@ -78,6 +78,21 @@
       html.dark {
         scrollbar-color: #30363d transparent; /* thumb track */
       }
+
+      /* ===== Toast Animation ===== */
+      @keyframes fadeInRight {
+        from {
+          opacity: 0;
+          transform: translateX(100%);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+      .animate-fade-in-right {
+        animation: fadeInRight 0.3s ease-out;
+      }
     </style>
   <script type="importmap">
 {

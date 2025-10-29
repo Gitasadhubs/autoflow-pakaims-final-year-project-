@@ -1,4 +1,4 @@
-import type { GitHubUser, Repository, Workflow, WorkflowRun, Job } from '../types';
+import type { GitHubUser, Repository, Workflow, WorkflowRun, Job, RateLimitResponse } from '../types';
 
 const GITHUB_API_BASE = 'https://api.github.com';
 
@@ -133,4 +133,8 @@ export const createWorkflowFile = async (
         }
         throw error; // re-throw other errors
     }
+};
+
+export const getRateLimit = (token: string): Promise<RateLimitResponse> => {
+    return apiFetch<RateLimitResponse>('/rate_limit', token);
 };
